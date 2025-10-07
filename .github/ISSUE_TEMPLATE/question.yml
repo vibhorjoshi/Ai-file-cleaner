@@ -1,0 +1,77 @@
+name: 'Question'
+description: 'Ask a question about AI File Cleanup'
+title: '[Question]: '
+labels: ['question', 'help-wanted']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question about AI File Cleanup? We're here to help!
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Prerequisites
+      description: Please confirm the following before asking your question
+      options:
+        - label: I have searched existing issues and discussions
+          required: true
+        - label: I have read the documentation and README
+          required: true
+        - label: I have checked the troubleshooting guide
+          required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question Category
+      description: What is your question about?
+      options:
+        - Installation & Setup
+        - Configuration
+        - Usage & Features
+        - API & Integration
+        - Performance
+        - Troubleshooting
+        - Development & Contributing
+        - General
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like to know?
+      placeholder: Ask your question here...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide any relevant context about your situation
+      placeholder: |
+        - What are you trying to achieve?
+        - What have you already tried?
+        - Any relevant environment details
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs or Output
+      description: If applicable, include any logs, error messages, or console output
+      render: shell
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      description: How urgent is this question?
+      options:
+        - Low - General curiosity
+        - Medium - Planning to use the feature
+        - High - Blocking current work
+    validations:
+      required: true

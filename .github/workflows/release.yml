@@ -1,0 +1,229 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get version from tag
+      id: get_version
+      run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get commits since last tag
+        if [ "$(git tag --list | wc -l)" -gt 1 ]; then
+          PREV_TAG=$(git tag --sort=-version:refname | sed -n '2p')
+          CHANGELOG=$(git log $PREV_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+        else
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+        fi
+        
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.get_version.outputs.version }}
+        release_name: AI File Cleanup ${{ steps.get_version.outputs.version }}
+        body: |
+          ## What's Changed
+          
+          ${{ steps.changelog.outputs.changelog }}
+          
+          ## Installation
+          
+          ### Quick Start
+          ```bash
+          npm install -g @ai-file-cleanup/cli
+          ```
+          
+          ### Docker
+          ```bash
+          docker run -p 3000:3000 ghcr.io/your-username/ai-file-cleanup:${{ steps.get_version.outputs.version }}
+          ```
+          
+          ### Download Binaries
+          Download the appropriate binary for your platform from the assets below.
+          
+          ## Documentation
+          - [Quick Start Guide](https://github.com/your-username/ai-file-cleanup#quick-start)
+          - [API Documentation](https://github.com/your-username/ai-file-cleanup#api-documentation)
+          - [Configuration Guide](https://github.com/your-username/ai-file-cleanup#configuration)
+          
+          **Full Changelog**: https://github.com/your-username/ai-file-cleanup/compare/${{ env.PREV_TAG || 'v0.0.0' }}...${{ steps.get_version.outputs.version }}
+        draft: false
+        prerelease: ${{ contains(steps.get_version.outputs.version, '-') }}
+
+  build-binaries:
+    name: Build Binaries
+    needs: create-release
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            arch: x64
+          - os: windows-latest
+            platform: win32
+            arch: x64
+          - os: macos-latest
+            platform: darwin
+            arch: x64
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Build applications
+      run: pnpm build
+
+    - name: Package desktop app
+      run: pnpm --filter desktop run package:${{ matrix.platform }}
+
+    - name: Create CLI package
+      run: |
+        pnpm --filter cli run build
+        pnpm --filter cli run package
+
+    - name: Upload desktop app (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./apps/desktop/dist/ai-file-cleanup-${{ needs.create-release.outputs.version }}.AppImage
+        asset_name: ai-file-cleanup-${{ needs.create-release.outputs.version }}-linux.AppImage
+        asset_content_type: application/octet-stream
+
+    - name: Upload desktop app (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./apps/desktop/dist/ai-file-cleanup-${{ needs.create-release.outputs.version }}.exe
+        asset_name: ai-file-cleanup-${{ needs.create-release.outputs.version }}-windows.exe
+        asset_content_type: application/octet-stream
+
+    - name: Upload desktop app (macOS)
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./apps/desktop/dist/ai-file-cleanup-${{ needs.create-release.outputs.version }}.dmg
+        asset_name: ai-file-cleanup-${{ needs.create-release.outputs.version }}-macos.dmg
+        asset_content_type: application/octet-stream
+
+  publish-docker:
+    name: Publish Docker Images
+    needs: create-release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ghcr.io/${{ github.repository }}
+        tags: |
+          type=ref,event=tag
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: docker-compose.prod.yml
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        platforms: linux/amd64,linux/arm64
+
+  publish-npm:
+    name: Publish NPM Packages
+    needs: create-release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Build packages
+      run: pnpm build
+
+    - name: Publish packages
+      run: pnpm publish -r --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

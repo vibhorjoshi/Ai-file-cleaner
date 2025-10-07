@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/web/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "https://ai-cleanup-api.onrender.com/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "apps/web/$1"
+    }
+  ],
+  "env": {
+    "API_BASE_URL": "https://ai-cleanup-api.onrender.com",
+    "NEXT_PUBLIC_API_URL": "https://ai-cleanup-api.onrender.com",
+    "SIMILARITY_THRESHOLD": "0.85",
+    "MAX_FILE_SIZE": "104857600"
+  }
+}

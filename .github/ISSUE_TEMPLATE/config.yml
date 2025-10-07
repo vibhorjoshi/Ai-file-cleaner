@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation
+    url: https://github.com/vibhorjoshi/ai-file-cleaner/blob/main/README.md
+    about: Check our comprehensive documentation first
+  
+  - name: 💬 Discussions
+    url: https://github.com/vibhorjoshi/ai-file-cleaner/discussions
+    about: Ask questions and discuss ideas with the community
+  
+  - name: 🔒 Security Issues
+    url: https://github.com/vibhorjoshi/ai-file-cleaner/security/advisories/new
+    about: Report security vulnerabilities privately
+  
+  - name: 📧 Support Forum
+    url: https://github.com/vibhorjoshi/ai-file-cleaner/discussions/categories/support
+    about: Get help from the community and maintainers

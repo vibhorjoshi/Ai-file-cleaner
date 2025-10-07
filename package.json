@@ -1,0 +1,44 @@
+{
+  "name": "ai-file-cleaner",
+  "version": "1.0.0",
+  "description": "AI-powered file deduplication system with ML embeddings",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vibhorjoshi/ai-file-cleaner.git"
+  },
+  "homepage": "https://github.com/vibhorjoshi/ai-file-cleaner#readme",
+  "bugs": {
+    "url": "https://github.com/vibhorjoshi/ai-file-cleaner/issues"
+  },
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean",
+    "db:migrate": "turbo run db:migrate",
+    "seed": "turbo run seed"
+  },
+  "devDependencies": {
+    "turbo": "^1.10.16",
+    "@turbo/gen": "^1.10.16",
+    "typescript": "^5.2.2",
+    "@types/node": "^20.8.10",
+    "prettier": "^3.0.3",
+    "eslint": "^8.52.0",
+    "@typescript-eslint/parser": "^6.9.1",
+    "@typescript-eslint/eslint-plugin": "^6.9.1"
+  },
+  "packageManager": "pnpm@8.10.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

@@ -1,0 +1,128 @@
+name: Performance Monitoring
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run performance tests daily at 3 AM UTC
+    - cron: '0 3 * * *'
+
+jobs:
+  performance:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+
+    - name: Build applications
+      run: pnpm build
+
+    - name: Run performance tests
+      run: |
+        # Start model worker in background
+        pnpm --filter model-worker start &
+        MODEL_WORKER_PID=$!
+        
+        # Wait for model worker to be ready
+        sleep 30
+        
+        # Start API service in background
+        pnpm --filter api start &
+        API_PID=$!
+        
+        # Wait for API to be ready
+        sleep 10
+        
+        # Run performance tests
+        pnpm test:perf || PERF_FAILED=1
+        
+        # Cleanup
+        kill $MODEL_WORKER_PID $API_PID || true
+        
+        if [ "$PERF_FAILED" = "1" ]; then
+          exit 1
+        fi
+
+    - name: Benchmark bundle size
+      run: |
+        # Analyze bundle sizes
+        pnpm --filter web run analyze
+        
+        # Check if bundle size is within limits
+        node scripts/check-bundle-size.js
+
+    - name: Memory usage test
+      run: |
+        # Start services and monitor memory usage
+        node scripts/memory-test.js
+
+    - name: Load test API endpoints
+      run: |
+        # Install k6 for load testing
+        curl -s https://github.com/grafana/k6/releases/download/v0.47.0/k6-v0.47.0-linux-amd64.tar.gz | tar xz
+        
+        # Start API service
+        pnpm --filter api start &
+        API_PID=$!
+        sleep 10
+        
+        # Run load tests
+        ./k6-v0.47.0-linux-amd64/k6 run scripts/load-test.js
+        
+        # Cleanup
+        kill $API_PID || true
+
+    - name: Upload performance results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-results
+        path: |
+          performance-results/
+          bundle-analysis/
+        retention-days: 30
+
+    - name: Comment performance results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          let comment = '## 🚀 Performance Report\n\n';
+          
+          // Add bundle size comparison
+          if (fs.existsSync('bundle-analysis/comparison.md')) {
+            comment += fs.readFileSync('bundle-analysis/comparison.md', 'utf8');
+          }
+          
+          // Add performance test results
+          if (fs.existsSync('performance-results/summary.md')) {
+            comment += '\n' + fs.readFileSync('performance-results/summary.md', 'utf8');
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

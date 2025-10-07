@@ -1,0 +1,120 @@
+// Prisma schema file for AI File Cleanup system
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User accounts with authentication
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  fullName     String?  @map("full_name")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  licenseKeys LicenseKey[]
+  uploads     Upload[]
+
+  @@map("users")
+}
+
+// Desktop application license keys
+model LicenseKey {
+  id        String    @id @default(cuid())
+  key       String    @unique @default(uuid())
+  userId    String    @map("user_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  expiresAt DateTime? @map("expires_at")
+  revoked   Boolean   @default(false)
+  revokedAt DateTime? @map("revoked_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("license_keys")
+}
+
+// File upload sessions for web interface
+model Upload {
+  id           String    @id @default(cuid())
+  userId       String?   @map("user_id")
+  totalFiles   Int       @map("total_files")
+  status       String    @default("processing")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  completedAt  DateTime? @map("completed_at")
+  fileMetadata Json?     @map("file_metadata")
+
+  // Relations
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  files       File[]
+  dedupeGroups DedupeGroup[]
+
+  @@map("uploads")
+}
+
+// File metadata and content information
+model File {
+  id          String    @id @default(cuid())
+  uploadId    String    @map("upload_id")
+  fileName    String    @map("file_name")
+  filePath    String?   @map("file_path")
+  mimeType    String?   @map("mime_type")
+  sizeBytes   Int       @map("size_bytes")
+  sha256      String    @map("sha256")
+  phash       String?   @map("phash")
+  textExcerpt String?   @map("text_excerpt")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  processedAt DateTime? @map("processed_at")
+  fileMetadata Json?    @map("file_metadata")
+
+  // Relations
+  upload     Upload         @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  embeddings FileEmbedding[]
+
+  @@index([sha256])
+  @@index([phash])
+  @@map("files")
+}
+
+// AI embeddings for similarity search
+model FileEmbedding {
+  id           String   @id @default(cuid())
+  fileId       String   @map("file_id")
+  kind         String   // 'text', 'image', 'multimodal'
+  modelName    String?  @map("model_name")
+  embedding    Float[]  // Vector embedding (pgvector extension)
+  embeddingImg Float[]? @map("embedding_img") // Optional image embedding
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  file File @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@map("file_embeddings")
+}
+
+// Duplicate file groups from analysis
+model DedupeGroup {
+  id                 String   @id @default(cuid())
+  uploadId           String   @map("upload_id")
+  groupHash          String   @map("group_hash") // Hash of file signatures in group
+  similarityScore    Float    @map("similarity_score")
+  detectionMethod    String   @map("detection_method")
+  keepCandidateId    String?  @map("keep_candidate_id")
+  totalSizeBytes     Int      @map("total_size_bytes")
+  potentialSavings   Int      @map("potential_savings")
+  createdAt          DateTime @default(now()) @map("created_at")
+  groupMetadata      Json?    @map("group_metadata")
+
+  // Relations
+  upload Upload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@map("dedupe_groups")
+}

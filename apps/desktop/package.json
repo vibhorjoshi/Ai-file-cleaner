@@ -1,0 +1,49 @@
+{
+  "name": "@ai-file-cleanup/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc && electron-builder",
+    "dev": "tsc && electron dist/main.js",
+    "start": "electron dist/main.js",
+    "clean": "rm -rf dist build",
+    "type-check": "tsc --noEmit",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "@ai-file-cleanup/core": "workspace:*",
+    "electron-updater": "^6.1.4"
+  },
+  "devDependencies": {
+    "electron": "^27.1.0",
+    "electron-builder": "^24.6.4",
+    "typescript": "^5.2.2",
+    "@types/node": "^20.8.10"
+  },
+  "build": {
+    "appId": "com.ai-cleanup.desktop",
+    "productName": "AI File Cleanup",
+    "directories": {
+      "output": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    }
+  }
+}
