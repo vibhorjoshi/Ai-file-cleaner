@@ -27,6 +27,13 @@
 - **TypeScript** - Full type safety across all packages
 - **Modern Stack** - Next.js, Fastify, Prisma, and transformers.js
 
+### Screen recording
+
+
+https://github.com/user-attachments/assets/f1baa4fc-bf53-473f-ab39-410430c76770
+
+
+
 ## 🚀 Quick Start
 
 ### Prerequisites
