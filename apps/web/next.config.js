@@ -2,7 +2,7 @@
 const nextConfig = {
   transpilePackages: ['@ai-file-cleanup/ui', '@ai-file-cleanup/core'],
   output: 'export',
-  distDir: '.next',
+  outDir: 'build',
   trailingSlash: true,
   images: {
     unoptimized: true
@@ -10,9 +10,6 @@ const nextConfig = {
   env: {
     API_BASE_URL: process.env.API_BASE_URL || 'http://localhost:3001',
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
-  },
-  async rewrites() {
-    return []
   },
 }
 
