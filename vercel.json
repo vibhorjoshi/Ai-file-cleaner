@@ -2,7 +2,7 @@
   "version": 2,
   "installCommand": "pnpm install --no-frozen-lockfile",
   "buildCommand": "pnpm run build --filter=@ai-file-cleanup/web",
-  "outputDirectory": "apps/web/build",
+  "outputDirectory": "apps/web/out",
   "routes": [
     {
       "src": "/api/(.*)",
