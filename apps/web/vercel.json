@@ -1,0 +1,18 @@
+{
+  "buildCommand": "cd ../.. && pnpm run build --filter=@ai-file-cleanup/web",
+  "outputDirectory": "out",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "framework": "nextjs",
+  "env": {
+    "API_BASE_URL": "https://ai-cleanup-api.onrender.com",
+    "NEXT_PUBLIC_API_URL": "https://ai-cleanup-api.onrender.com",
+    "SIMILARITY_THRESHOLD": "0.85",
+    "MAX_FILE_SIZE": "104857600"
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://ai-cleanup-api.onrender.com/api/$1"
+    }
+  ]
+}

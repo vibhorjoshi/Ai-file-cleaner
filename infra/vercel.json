@@ -1,19 +1,14 @@
 {
   "version": 2,
-  "builds": [
+  "monorepo": true,
+  "buildCommand": "pnpm run build --filter=@ai-file-cleanup/web",
+  "outputDirectory": "apps/web/out",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "framework": null,
+  "rewrites": [
     {
-      "src": "apps/web/package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "https://ai-cleanup-api.onrender.com/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "apps/web/$1"
+      "source": "/api/(.*)",
+      "destination": "https://ai-cleanup-api.onrender.com/api/$1"
     }
   ],
   "env": {

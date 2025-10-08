@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "clean": "rm -rf .next node_modules"
+    "clean": "rm -rf .next out node_modules"
   },
   "dependencies": {
     "next": "^14.0.3",
