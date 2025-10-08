@@ -2,7 +2,7 @@
   "version": 2,
   "monorepo": true,
   "buildCommand": "pnpm run build --filter=@ai-file-cleanup/web",
-  "outputDirectory": "apps/web/out",
+  "outputDirectory": "apps/web/build",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": null,
   "rewrites": [
