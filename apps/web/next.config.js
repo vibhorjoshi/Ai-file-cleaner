@@ -2,7 +2,7 @@
 const nextConfig = {
   transpilePackages: ['@ai-file-cleanup/ui', '@ai-file-cleanup/core'],
   output: 'export',
-  distDir: 'build',
+  distDir: '.next',
   trailingSlash: true,
   images: {
     unoptimized: true
