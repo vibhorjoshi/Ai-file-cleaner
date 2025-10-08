@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && npm run post-build",
-    "post-build": "if exist out (move out build) else (echo No out directory found)",
+    "post-build": "if [ -d out ]; then mv out build; else echo 'No out directory found'; fi",
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
